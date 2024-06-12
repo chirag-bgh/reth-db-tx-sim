@@ -12,10 +12,10 @@ use reth_evm_ethereum::{execute::EthExecutorProvider, EthEvmConfig};
 use reth_primitives::{
     revm::env::{fill_block_env, fill_tx_env},
     revm_primitives::EVMError,
-    ChainSpec, ChainSpecBuilder,
+    ChainSpec, ChainSpecBuilder, TxHash,
 };
 use reth_provider::{providers::BlockchainProvider, BlockReaderIdExt, StateProviderFactory};
-use reth_revm::primitives::{ExecutionResult, InvalidTransaction::InvalidChainId};
+use reth_revm::primitives::InvalidTransaction::InvalidChainId;
 use reth_revm::{database::StateProviderDatabase, db::CacheDB, primitives::ResultAndState};
 use serde::Deserialize;
 
@@ -31,7 +31,11 @@ struct RpcResponse {
 
 #[tokio::main]
 async fn main() {
-    let _ = send_rpc_request().await;
+    let txs = send_rpc_request()
+        .await
+        .expect("Failed to send RPC request");
+    let valid_txs_hash = simulate(txs).expect("Failed to simulate transactions");
+    println!("Valid transactions: {:?}", valid_txs_hash);
 }
 
 async fn send_rpc_request() -> eyre::Result<Vec<TransactionSigned>, reqwest::Error> {
@@ -49,25 +53,34 @@ async fn send_rpc_request() -> eyre::Result<Vec<TransactionSigned>, reqwest::Err
     Ok(rpc_response.result)
 }
 
-pub fn simulate(input: Vec<TransactionSigned>) -> eyre::Result<Vec<TransactionSigned>> {
+pub fn simulate(input: Vec<TransactionSigned>) -> eyre::Result<Vec<TxHash>> {
     let reth_runner = Arc::new(reth_runner_builder()?);
-    let mut valid_txs = Vec::<TransactionSigned>::new();
+    let mut valid_txs_hash = Vec::<TxHash>::new();
 
     for tx in input {
         loop {
-            let result =
-                reth_runner.validate_tx(&tx, tx.recover_signer().expect("could recover signer"));
+            let result = reth_runner
+                .validate_tx(&tx, tx.recover_signer().expect("could not recover signer"));
+
             match result {
-                Ok(ResultAndState { result, state: _ }) => match result {
-                    ExecutionResult::Success { .. } => valid_txs.push(tx.clone()),
-                    _ => unimplemented!(),
-                },
-                _ => unimplemented!(),
+                Result::Ok(result) => {
+                    println!(
+                        "Transaction {:?}: used gas {}, success: {}",
+                        tx.hash,
+                        result.result.gas_used(),
+                        result.result.is_success()
+                    );
+                    println!("Number of state changes: {}", result.state.len());
+                    valid_txs_hash.push(tx.clone().hash());
+                }
+                Result::Err(e) => {
+                    println!("Reth simulator error: {:?}", e);
+                }
             }
         }
     }
 
-    Ok(valid_txs)
+    Ok(valid_txs_hash)
 }
 
 pub fn reth_runner_builder() -> eyre::Result<RethRunner<Arc<reth_db::mdbx::DatabaseEnv>>> {
