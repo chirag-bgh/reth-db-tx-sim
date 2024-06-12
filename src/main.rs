@@ -17,28 +17,29 @@ use reth_primitives::{
 use reth_provider::{providers::BlockchainProvider, BlockReaderIdExt, StateProviderFactory};
 use reth_revm::primitives::InvalidTransaction::InvalidChainId;
 use reth_revm::{database::StateProviderDatabase, db::CacheDB, primitives::ResultAndState};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use std::path::Path;
 use std::sync::Arc;
 
-#[derive(Debug, Deserialize)]
-struct RpcResponse {
-    _jsonrpc: String,
-    _id: u64,
-    result: Vec<TransactionSigned>,
+#[derive(Serialize, Deserialize, Debug)]
+struct RpcResponse<T> {
+    jsonrpc: String,
+    result: T,
+    id: u32,
 }
 
 #[tokio::main]
 async fn main() {
     let txs = send_rpc_request()
         .await
-        .expect("Failed to send RPC request");
+        .expect("Failed to send RPC request")
+        .result;
     let valid_txs_hash = simulate(txs).expect("Failed to simulate transactions");
     println!("Valid transactions: {:?}", valid_txs_hash);
 }
 
-async fn send_rpc_request() -> eyre::Result<Vec<TransactionSigned>, reqwest::Error> {
+async fn send_rpc_request() -> eyre::Result<RpcResponse<Vec<TransactionSigned>>, reqwest::Error> {
     let client = reqwest::Client::new();
     let res = client
         .post("http://localhost:8545/")
@@ -48,9 +49,9 @@ async fn send_rpc_request() -> eyre::Result<Vec<TransactionSigned>, reqwest::Err
         )
         .send()
         .await?;
-    let rpc_response: RpcResponse = res.json().await?;
+    let rpc_response = res.json::<RpcResponse<Vec<TransactionSigned>>>().await?;
 
-    Ok(rpc_response.result)
+    Ok(rpc_response)
 }
 
 pub fn simulate(input: Vec<TransactionSigned>) -> eyre::Result<Vec<TxHash>> {
