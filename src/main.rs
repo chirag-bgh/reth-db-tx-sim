@@ -14,6 +14,7 @@ use reth_primitives::{
     revm_primitives::EVMError,
     ChainSpec, ChainSpecBuilder, TxHash,
 };
+use reth_provider::providers::StaticFileProvider;
 use reth_provider::{providers::BlockchainProvider, BlockReaderIdExt, StateProviderFactory};
 use reth_revm::primitives::InvalidTransaction::InvalidChainId;
 use reth_revm::{database::StateProviderDatabase, db::CacheDB, primitives::ResultAndState};
@@ -90,8 +91,13 @@ pub fn reth_runner_builder() -> eyre::Result<RethRunner<Arc<reth_db::mdbx::Datab
     let db = Arc::new(open_db_read_only(db_path, Default::default())?);
 
     let chain_spec = Arc::new(ChainSpecBuilder::mainnet().build());
-    let factory =
-        ProviderFactory::new(db.clone(), chain_spec.clone(), db_path.join("static_files"))?;
+    // let factory =
+    //     ProviderFactory::new(db.clone(), chain_spec.clone(), db_path.join("static_files"))?;
+    let factory = ProviderFactory::new(
+        db.clone(),
+        chain_spec.clone(),
+        StaticFileProvider::read_only(db_path.join("static_files"))?,
+    );
 
     let provider = Arc::new({
         let consensus = Arc::new(EthBeaconConsensus::new(chain_spec.clone()));

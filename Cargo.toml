@@ -16,12 +16,22 @@ serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
 tracing = { version = "0.1", features = ["log"] }
 
-reth = { git = "https://github.com/paradigmxyz/reth", tag = "v0.2.0-beta.7" }
-reth-transaction-pool = { git = "https://github.com/paradigmxyz/reth", tag = "v0.2.0-beta.7" }
-reth-db = { git = "https://github.com/paradigmxyz/reth", tag = "v0.2.0-beta.7" }
-reth-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v0.2.0-beta.7" }
-reth-provider = { git = "https://github.com/paradigmxyz/reth", tag = "v0.2.0-beta.7" }
-reth-evm-ethereum = { git = "https://github.com/paradigmxyz/reth", tag = "v0.2.0-beta.7" }
-reth-revm = { git = "https://github.com/paradigmxyz/reth", tag = "v0.2.0-beta.7" }
-reth-node-ethereum = { git = "https://github.com/paradigmxyz/reth", tag = "v0.2.0-beta.7" }
+reth = { git = "https://github.com/paradigmxyz/reth", tag = "v1.0.0-rc.1" }
+reth-transaction-pool = { git = "https://github.com/paradigmxyz/reth", tag = "v1.0.0-rc.1" }
+reth-db = { git = "https://github.com/paradigmxyz/reth", tag = "v1.0.0-rc.1" }
+reth-primitives = { git = "https://github.com/paradigmxyz/reth", tag = "v1.0.0-rc.1" }
+reth-provider = { git = "https://github.com/paradigmxyz/reth", tag = "v1.0.0-rc.1" }
+reth-evm-ethereum = { git = "https://github.com/paradigmxyz/reth", tag = "v1.0.0-rc.1" }
+reth-revm = { git = "https://github.com/paradigmxyz/reth", tag = "v1.0.0-rc.1" }
+reth-node-ethereum = { git = "https://github.com/paradigmxyz/reth", tag = "v1.0.0-rc.1" }
+enr = { version = "=0.12.0", default-features = false, features = [
+    "k256",
+    "rust-secp256k1",
+] }
+
+[patch.crates-io]
+revm = { git = "https://github.com/bluealloy/revm", rev = "a28a543" }
+revm-interpreter = { git = "https://github.com/bluealloy/revm", rev = "a28a543" }
+revm-precompile = { git = "https://github.com/bluealloy/revm", rev = "a28a543" }
+revm-primitives = { git = "https://github.com/bluealloy/revm", rev = "a28a543" }
 
